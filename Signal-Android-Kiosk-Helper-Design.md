@@ -184,7 +184,6 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 
 That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  When existing Accessibility Mode, the Kiosk mode is turned off.  This allows the assisting user to exit the Accessibility Mode to Signal settings, then use the Home and other buttons to go e.g. to Android Settings, etc. If restoring the previous HOME fails (component missing), the helper will call `clearPackagePersistentPreferredActivities()` to let Android show the HOME picker once.
 
-Optional, later (NOT IN V1): **Recovery/Emergency exit:** Caregiver‑only gesture on the helper’s invisible HomeActivity (five taps in upper‑left corner + PIN) opens an *Exit* screen to CLEAR policy.
 
 ---
 
