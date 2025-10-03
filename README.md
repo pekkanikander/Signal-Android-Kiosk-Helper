@@ -1,6 +1,6 @@
 # Signal‑Android‑Kiosk‑Helper
 
-> A tiny, auditable **Device Owner + minimal Launcher** that gives Signal‑Android (mainly its [Accessibility Mode fork](../Signal-Android-Accessibility-Kiosk/)) a true, OS‑level **kiosk** on Android **9+** — with **no network**, **no analytics**, and **fail‑fast** behavior.
+> A tiny, auditable **Device Owner + minimal Launcher** that gives Signal‑Android (mainly its [Accessibility Mode fork](../../../Signal-Android-Accessibility-Kiosk/)) a true, OS‑level **kiosk** on Android **9+** — with **no network**, **no analytics**, and **fail‑fast** behavior.
 
 <p align="left">
   <a href="#status"><img alt="Status" src="https://img.shields.io/badge/status-alpha-orange" /></a>
