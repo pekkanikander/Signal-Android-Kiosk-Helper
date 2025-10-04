@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "fi.iki.pnr.kioskhelper"
-        minSdk = 28
+        minSdk = 33
         targetSdk = 34
         versionCode = 1
         versionName = "0.1"

@@ -15,7 +15,7 @@ class KioskCommandActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val action = intent?.action
-        val resultReceiver: ResultReceiver? = intent?.getParcelableExtra("extra_result_receiver")
+        val resultReceiver: ResultReceiver? = intent?.getParcelableExtra("extra_result_receiver", ResultReceiver::class.java)
 
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val admin = AdminReceiver.getComponentName(this)

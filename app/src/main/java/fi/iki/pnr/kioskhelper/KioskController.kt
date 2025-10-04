@@ -28,9 +28,6 @@ object KioskController {
     ): Boolean {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
-        // Version guard
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
-
         // Lock task allowlist
         val packages = (allowlist + listOf("fi.iki.pnr.kioskhelper", signalPackage)).distinct().toTypedArray()
         dpm.setLockTaskPackages(admin, packages)
@@ -54,10 +51,7 @@ object KioskController {
         val launch = context.packageManager.getLaunchIntentForPackage(signalPackage)
             ?: return false
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        val options = ActivityOptions.makeBasic()
-        if (Build.VERSION.SDK_INT >= 29) {
-            options.setLockTaskEnabled(true)
-        }
+        val options = ActivityOptions.makeBasic().apply { setLockTaskEnabled(true) }
         context.startActivity(launch, options.toBundle())
         return true
     }
