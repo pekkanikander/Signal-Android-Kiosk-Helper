@@ -16,7 +16,7 @@
   - `fi.iki.pnr.kioskhelper.KIOSK_APPLIED`
   - `fi.iki.pnr.kioskhelper.KIOSK_CLEARED`
 - **Result extras (for callback/broadcast):**
-  - `extra_result`: `OK | ERR_UNPROVISIONED_API28PLUS_REQUIRED | ERR_DND_PERMISSION_MISSING | ERR_INVALID_PARAMS | ERR_INTERNAL`
+  - `extra_result`: `OK | ERR_NOT_DEVICE_OWNER | ERR_DND_PERMISSION_MISSING | ERR_INVALID_PARAMS | ERR_INTERNAL`
   - `extra_message`: optional human‑readable message
   - `extra_dnd_active`: `boolean` (present on `KIOSK_APPLIED`)
 
@@ -97,7 +97,7 @@
 
 ## 8) Edge‑case behavior
 - If Signal not installed when enabling → `ERR_INVALID_PARAMS`.
-- If device not DO → `ERR_UNPROVISIONED_API28PLUS_REQUIRED`.
+- If device not DO → `ERR_NOT_DEVICE_OWNER`.
 - If API < 28 → same error.
 - On clear: always attempt to restore HOME; if component missing → clear helper’s persistent preferred to show chooser.
 

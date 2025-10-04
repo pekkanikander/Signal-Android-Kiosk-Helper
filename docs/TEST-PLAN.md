@@ -23,7 +23,7 @@ Test at least one device/emulator on each of:
 3. **Enable fail — not Device Owner**
    - Fresh device without DO, install helper.
    - Call `ACTION_ENABLE_KIOSK`.
-   - Expect `ERR_UNPROVISIONED_API28PLUS_REQUIRED`.
+   - Expect `ERR_NOT_DEVICE_OWNER`.
 
 4. **Enable fail — Signal not installed**
    - Uninstall Signal.

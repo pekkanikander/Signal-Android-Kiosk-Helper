@@ -77,7 +77,7 @@ All intents are **explicit** (set package/class). Exported components require a 
 
 ### Results (via callback/broadcast)
 - `OK`
-- `ERR_UNPROVISIONED_API28PLUS_REQUIRED`
+- `ERR_NOT_DEVICE_OWNER`
 - `ERR_DND_PERMISSION_MISSING` *(no policy applied; caller should prompt to grant DND or retry with `dndMode=none` if supported)*
 - `ERR_INVALID_PARAMS`
 - `ERR_INTERNAL`

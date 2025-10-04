@@ -25,7 +25,7 @@ Exported components require the **signature permission** `fi.iki.pnr.kioskhelper
 ## Results
 **Immediate result** (if `extra_result_receiver` is provided) and/or logcat. Values:
 - `OK`
-- `ERR_UNPROVISIONED_API28PLUS_REQUIRED`
+- `ERR_NOT_DEVICE_OWNER`
 - `ERR_DND_PERMISSION_MISSING` *(no policy applied)*
 - `ERR_INVALID_PARAMS`
 - `ERR_INTERNAL`
@@ -48,7 +48,7 @@ Exported components require the **signature permission** `fi.iki.pnr.kioskhelper
 
 ## Error semantics
 - **DND missing** → return `ERR_DND_PERMISSION_MISSING` and **do nothing**.
-- **Not Device Owner / API < 28** → return `ERR_UNPROVISIONED_API28PLUS_REQUIRED`.
+- **Not Device Owner** → return `ERR_NOT_DEVICE_OWNER`.
 - **Signal not installed** (or not in allowlist) → return `ERR_INVALID_PARAMS`.
 
 ---

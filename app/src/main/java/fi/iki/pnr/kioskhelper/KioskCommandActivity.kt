@@ -26,7 +26,7 @@ class KioskCommandActivity : Activity() {
         val isDeviceOwner = dpm.isDeviceOwnerApp(packageName)
 
         if (!isDeviceOwner) {
-            sendResult(resultReceiver, "ERR_UNPROVISIONED_API28PLUS_REQUIRED")
+            sendResult(resultReceiver, "ERR_NOT_DEVICE_OWNER")
             finish(); return
         }
 

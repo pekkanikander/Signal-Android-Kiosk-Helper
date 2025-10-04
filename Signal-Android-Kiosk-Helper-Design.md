@@ -139,7 +139,7 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 
 ### Result codes (returned via callback or sticky local broadcast)
 - `OK`
-- `ERR_UNPROVISIONED_API28PLUS_REQUIRED`
+- `ERR_NOT_DEVICE_OWNER`
 - `ERR_DND_PERMISSION_MISSING` *(no policy applied, the caller should retry with dndMode = none)*
 - `ERR_INVALID_PARAMS`
 - `ERR_INTERNAL`
