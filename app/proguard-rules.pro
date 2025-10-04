@@ -1,0 +1,4 @@
+-keep class fi.iki.pnr.kioskhelper.AdminReceiver { *; }
+-keep class fi.iki.pnr.kioskhelper.BootReceiver { *; }
+-keep class fi.iki.pnr.kioskhelper.HomeActivity { *; }
+-keep class fi.iki.pnr.kioskhelper.KioskCommandActivity { *; }

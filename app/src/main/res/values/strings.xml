@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Kiosk Helper</string>
+    <string name="perm_label">Control kiosk policy</string>
+    <string name="perm_description">Allows controlling Device Owner kiosk policy</string>
+</resources>
