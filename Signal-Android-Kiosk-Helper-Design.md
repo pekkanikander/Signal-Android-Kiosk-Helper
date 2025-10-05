@@ -71,8 +71,8 @@ We will use DND (“Total silence”) in addition to notification UI suppression
 **Components (helper APK):**
 1. **AdminReceiver** — standard `DeviceAdminReceiver` to receive DO callbacks and expose policy APIs.
 2. **KioskController** *(Service)* — applies/clears policy based on incoming Intents; persists and restores state.
-3. **HomeActivity (Minimal Launcher)** — declared as `HOME|DEFAULT`; visually blank/neutral; ensures there is always a “safe surface” to relaunch Signal; can start/stop lock task.
-4. **BootReceiver** — on reboot, re‑applies policy **only if all preconditions are met** (incl. DND granted). If any precondition is missing (e.g., DND not granted), it **fails fast and no‑ops**; Signal remains in normal mode until the caregiver re‑enables kiosk from Signal.
+3. **HomeActivity (Minimal Launcher)** — **used in v1**. When kiosk is prepared, the helper is set as the persistent default HOME. Pressing Home launches Signal immediately. The launcher shows no UI and only forwards to Signal.
+4. **BootReceiver** — on boot, the helper **launches Signal** (simple forward). It does not force lock task or change policy state; Signal will pin itself if Accessibility Mode is enabled, or otherwise run normally.
 5. **(Optional) NotificationBackstop** — `NotificationListenerService` that cancels any non‑allow‑listed notifications in case of OEM quirks (after explicit user/MDM grant).
 
 **External:** Signal‑Android (our Accessibility-Kiosk fork) calls the helper via explicit **Intents** when Accessibility Mode Kiosk-features are toggled.
@@ -81,18 +81,15 @@ We will use DND (“Total silence”) in addition to notification UI suppression
 
 ## 5) Policy Surface (what the helper toggles, a minimal initial design)
 
-When **APPLY kiosk**:
-- **Lock Task** on (dedicated device):
-  - Allowlist packages (helper + Signal, others optional)
-  - Configure **Lock Task Features** and **omit notifications** (i.e., do **not** include the notifications feature)
+When **PREPARE kiosk** (v1 semantics):
+- **Lock Task allowlist** (helper + Signal; others optional)
+- **Lock Task Features**: conservative defaults with **notifications omitted**
 - **Disable Status Bar** (outside of lock task) to block shade/quick settings when relevant
 - **DND: Total Silence** (if DND access granted) to suppress all sound/haptics
-  - Now targeting API 33+. On newer targets there may be a need to migrate to a rule-based DND
-- **User restrictions (initially mandatory, later optional via the intent):**
-  - Do allow safe boot and factory reset; requires knowledge that the assisted user is unlikely to have
-  - Add other relevant restrictions if needed for the deployment
-- **Launcher role:** set helper as **persistent HOME** so Home always returns to a controlled surface
-- **Start Signal** in lock task and keep it in foreground; if Signal exits, HOME resumes and relaunches it
+  - Targeting API 33+. On newer targets there may be a need to migrate to a rule‑based DND
+- **Set helper as default HOME** — persistent preferred activity pointing to `HomeActivity`; pressing Home always routes to Signal
+- **No app launch from ENABLE** — the helper does not bring Signal to foreground as part of ENABLE; see Boot/Home behavior below
+- **Signal pins/unpins** — Signal calls `startLockTask()` while **AccessibilityModeActivity** is active and `stopLockTask()` when leaving
 
 ### 5.1 Lock Task Feature defaults (API 33+)
 
@@ -120,7 +117,7 @@ UNPROVISIONED  ->  PROVISIONING  ->  READY_IDLE  ->  APPLIED  ->  CLEARING -> RE
 - **UNPROVISIONED:** Helper not device owner. Any APPLY request returns an error with guidance.
 - **PROVISIONING:** Performed once on factory‑fresh device. Sets helper as DO.
 - **READY_IDLE:** DO active but no kiosk policy applied.
-- **APPLIED:** Kiosk policy applied; helper is HOME; Signal running in lock task.
+- **APPLIED:** Kiosk policy prepared (allowlist/features/DND) and helper is HOME. Signal pins itself only while AccessibilityModeActivity is active; otherwise, the device runs normally but Home launches Signal.
 - **CLEARING:** Rolling back policy to READY_IDLE.
 
 Persisted fields: previous HOME component, last DND level, last applied features/allowlist, timestamps.
@@ -135,6 +132,8 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 - `fi.iki.pnr.kioskhelper.ACTION_ENABLE_KIOSK`
 - `fi.iki.pnr.kioskhelper.ACTION_DISABLE_KIOSK`
 
+> **v1 semantics:** `ACTION_ENABLE_KIOSK` means *prepare policy only* (allowlist, features, DND, set HOME). The helper does not start lock task and does not launch Signal as part of this action. Signal enters/exits lock task itself.
+
 ### Common extras (all optional unless stated)
 - `fi.iki.pnr.kioskhelper.extra.ALLOWLIST: String[]` — packages permitted in lock task (default: helper + Signal)
 - `fi.iki.pnr.kioskhelper.extra.FEATURES: Int` — Lock Task Features bitmask (with **notifications omitted** by default)
@@ -144,7 +143,7 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 
 > **Legacy aliases accepted for v0.x:** `allowlist`, `features`, `suppressStatusBar`, `dndMode`, `resultReceiver`/`resultPendingIntent`. If both namespaced and legacy keys are present, the helper uses the namespaced values.
 
-### Result codes (returned via callback or sticky local broadcast)
+### Result codes (returned via **ResultReceiver** (preferred) or a local broadcast)
 - `OK`
 - `ERR_NOT_DEVICE_OWNER`
 - `ERR_DND_PERMISSION_MISSING` *(no policy applied, the caller should retry with dndMode = none)*
@@ -175,19 +174,15 @@ Note that Signal and helper must be installed for the same Android user (per-use
 **To enable Kiosk mode (atomic transition):**
 5. In Signal, open **Accessibility Mode** settings and toggle **“Use Kiosk Helper”**.
 6. Signal sends **ENABLE** (explicit Intent) and **waits** for the helper to broadcast `fi.iki.pnr.kioskhelper.KIOSK_APPLIED`.
-7. The helper:
-   - Saves the current launcher as “previous HOME”
-   - Applies policy (lock task, features, status bar, DND) — if DND missing, it **fails** with `ERR_DND_PERMISSION_MISSING`
-   - Sets itself as HOME and **relaunches Signal**
-8. After receiving `KIOSK_APPLIED`, Signal navigates into Accessibility Mode.
-9. **Verification:** press Home, pull the shade, send notifications — nothing disruptive should appear; sounds/vibration silent.
+7. The helper prepares policy (allowlist, features, status bar, DND) and **sets itself as the persistent HOME**. If DND is missing and requested, it **fails** with `ERR_DND_PERMISSION_MISSING` (no partial apply).
+8. On success (`OK` via ResultReceiver), **Signal** stays in Settings where it is. When the user navigates into Accessibility Mode, the activity tries to call `startLockTask()` (e.g., in `AccessibilityModeActivity.onResume()`).
+9. **Verification:** press Home, pull the shade, send notifications — nothing disruptive should appear; sounds/vibration silent. Home should route to Signal.
 
-**Reboot behavior (v1, fail‑fast):** After a reboot, the helper re‑applies kiosk **only if** DND access is still granted and other preconditions hold. If DND was revoked or is missing, the helper does **not** partially apply kiosk; it does nothing and waits for Signal to request ENABLE again.
+**Reboot behavior (v1, simple):** On boot the helper does not modify policy; it only launches Signal. If kiosk was previously prepared, HOME remains set and Signal will pin itself only when Accessibility Mode is active. If DND was revoked, Signal runs normally until the caregiver re‑enables kiosk from Settings.
 
 **Disabling kiosk (atomic transition):**
-1. When leaving Accessibility Mode (e.g., returning to Settings), Signal sends **DISABLE** and waits for `fi.iki.pnr.kioskhelper.KIOSK_CLEARED`.
-2. The helper exits lock task, restores prior HOME/launcher and DND/status‑bar settings, then launches Signal to the **Settings** screen.
-3. After receiving `KIOSK_CLEARED`, Signal completes the navigation.
+1. When leaving Accessibility Mode (e.g., returning to Settings), Signal tries to call `stopLockTask()`. It sends **DISABLE** and waits for `fi.iki.pnr.kioskhelper.KIOSK_CLEARED` (or an OK via ResultReceiver) only if the Kiosk mode is disabled from the Settings.
+2. The helper rolls back DND/status‑bar settings and **restores the previous HOME**. No relaunch is performed by the helper.
 
 > Design principle: **kiosk is active only while Accessibility Mode is active**. Outside Accessibility Mode, the device behaves normally.
 
@@ -211,9 +206,16 @@ That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  
 ---
 
 ## 10) UX & Interop with Signal
-- Signal shows a **single toggle**: *“Enable Kiosk (requires helper)”* with a status line: *Installed / Not installed / Not provisioned*.
-- When enabled, Signal sends **ENABLE** and waits for `KIOSK_APPLIED` before navigating into Accessibility Mode. When exiting, it sends **DISABLE** and waits for `KIOSK_CLEARED` before returning to Settings. **Transitions are atomic.**
-- If helper absent or unprovisioned, "Enable Kiosk" cannot be chosen, with a link to the caregiver guide underneath.
+- Signal, in Accessibility Settings, shows a **single toggle**: *“Enable Kiosk (requires helper)”*. When enabled, Signal sends **ENABLE** and waits for `KIOSK_APPLIED` (or `OK` via ResultReceiver). Then, later, when Signal navigates into Accessibility Mode,it tries to call `startLockTask()`. On exit Accessibility mode, Signal tries to call `stopLockTask()`. When, back in Settings, the Enable Kiosk is disabled, Signal sends **DISABLE**, and waits for `KIOSK_CLEARED`.
+
+This means that there are four different state combinations:
+
+1) No kiosk prepared.  No changes to baseline behaviour.
+2) No kiosk prepared but Signal runs in Accessibility Mode.
+3) Kiosk prepared but user exists Signal before enabling Accessibility mode.
+4) Kiosk applied and Signal runs in Accessibility mode.
+
+
 
 ---
 
