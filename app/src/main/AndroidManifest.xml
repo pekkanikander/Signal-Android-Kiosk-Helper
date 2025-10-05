@@ -10,6 +10,17 @@
         android:label="@string/perm_label"
         android:description="@string/perm_description" />
 
+    <!-- Package visibility for Android 11+ so we can resolve Signal's launcher -->
+    <queries>
+        <!-- See any app with a launcher activity -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <!-- And explicitly the Signal package used by our fork -->
+        <package android:name="org.thoughtcrime.securesms" />
+    </queries>
+
     <application
         android:label="Kiosk Helper"
         android:allowBackup="false"

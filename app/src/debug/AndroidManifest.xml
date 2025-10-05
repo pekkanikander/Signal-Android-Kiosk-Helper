@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="fi.iki.pnr.kioskhelper"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity
+            android:name=".KioskCommandActivity"
+            android:exported="true"
+            android:permission="@null"
+            tools:replace="android:permission" />
+    </application>
+</manifest>

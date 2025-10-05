@@ -75,11 +75,11 @@
 - **DND mode:** `total` (must be granted; otherwise `ERR_DND_PERMISSION_MISSING`).
 
 ## 5) Data keys for Intent extras (optional)
-- `extra_allowlist: ArrayList<String>`
-- `extra_features: Int`
-- `extra_suppress_status_bar: Boolean`
-- `extra_dnd_mode: String` (`none|alarms|total`) — currently **must** be `total` or grant present
-- `extra_result_receiver: android.os.ResultReceiver` (optional)
+- `fi.iki.pnr.kioskhelper.extra.ALLOWLIST: ArrayList<String>`
+- `fi.iki.pnr.kioskhelper.extra.FEATURES: Int`
+- `fi.iki.pnr.kioskhelper.extra.SUPPRESS_STATUS_BAR: Boolean`
+- `fi.iki.pnr.kioskhelper.extra.DND_MODE: String` (`none|alarms|total`) — currently **must** be `total` or grant present
+- `fi.iki.pnr.kioskhelper.extra.RESULT_RECEIVER: android.os.ResultReceiver` (optional)
 
 ## 6) Caller validation
 - **Require** `KIOSK_CONTROL` permission on exported components.

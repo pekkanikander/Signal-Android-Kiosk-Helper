@@ -24,7 +24,7 @@ class AdminReceiver : DeviceAdminReceiver() {
     }
 
     companion object {
-        private const val TAG = "KioskAdminReceiver"
+        private const val TAG = "KioskHelper"
 
         fun getComponentName(context: Context): ComponentName =
             ComponentName(context.applicationContext, AdminReceiver::class.java)

@@ -1,17 +1,17 @@
 # Signal‑Android‑Kiosk‑Helper
 
-> A tiny, auditable **Device Owner + minimal Launcher** that gives Signal‑Android (mainly its [Accessibility Mode fork](../../../Signal-Android-Accessibility-Kiosk/)) a true, OS‑level **kiosk** on Android **9+** — with **no network**, **no analytics**, and **fail‑fast** behavior.
+> A tiny, auditable **Device Owner + minimal Launcher** that gives Signal‑Android (mainly its [Accessibility Mode fork](../../../Signal-Android-Accessibility-Kiosk/)) a true, OS‑level **kiosk** on Android **13+** — with **no network**, **no analytics**, and **fail‑fast** behavior.
 
 <p align="left">
   <a href="#status"><img alt="Status" src="https://img.shields.io/badge/status-alpha-orange" /></a>
-  <a href="#platform"><img alt="Android" src="https://img.shields.io/badge/Android-API_28%2B-blue" /></a>
+  <a href="#platform"><img alt="Android" src="https://img.shields.io/badge/Android-API_33%2B-blue" /></a>
   <a><img alt="Device Owner" src="https://img.shields.io/badge/Device%20Owner-required-red" /></a>
   <a><img alt="Network" src="https://img.shields.io/badge/network-none-brightgreen" /></a>
   <a href="#license"><img alt="License" src="https://img.shields.io/badge/license-Unlicense-blue" /></a>
 </p>
 
 ## TL;DR
-- Runs as **Device Owner (DO)** on a **factory‑fresh** Android device (API **28+**).
+- Runs as **Device Owner (DO)** on a **factory‑fresh** Android device (API **33+**).
 - Acts as a **minimal launcher (HOME)** and applies **Lock Task** with notifications suppressed, plus **Do Not Disturb (DND)** → **Total Silence**.
 - Exposes a **tiny Intent API** that your app (e.g., our Signal‑Android fork) calls to **ENABLE** or **DISABLE** kiosk.
 - **Fail‑fast**: if DND access is missing, the helper **does nothing** and returns an error; it never applies partial policy.
@@ -42,7 +42,7 @@ Signal can reliably silence **its own** notifications, but avoiding **all** dist
 ---
 
 ## Platform & prerequisites
-- **Android**: 9+ (API **28+**). Earlier versions are **not supported**.
+- **Android**: 13+ (API **33+**). Earlier versions are **not supported**.
 - **Ownership**: device must be provisioned with this helper as **Device Owner** (requires **factory reset**).
 - **DND access**: user must grant **Do Not Disturb** access once to the helper. If not granted, enabling kiosk **fails fast**.
 
@@ -68,12 +68,11 @@ All intents are **explicit** (set package/class). Exported components require a 
 - `fi.iki.pnr.kioskhelper.ACTION_DISABLE_KIOSK`
 
 ### Extras (optional unless noted)
-- `allowlist: String[]` — packages allowed in Lock Task (default: helper + caller)
-- `features: Int` — Lock Task features (defaults omit notifications)
-- `suppressStatusBar: Boolean` — default `true`
-- `dndMode: String` — `none | alarms | total` (default `total`; if DND not granted → **error**)
-- `suppressErrorDialogs: Boolean` — default `true`
-- `resultReceiver` or `resultPendingIntent` — optional for immediate result
+- `fi.iki.pnr.kioskhelper.extra.ALLOWLIST: String[]` — packages allowed in Lock Task (default: helper + caller)
+- `fi.iki.pnr.kioskhelper.extra.FEATURES: Int` — Lock Task features (defaults omit notifications)
+- `fi.iki.pnr.kioskhelper.extra.SUPPRESS_STATUS_BAR: Boolean` — default `true`
+- `fi.iki.pnr.kioskhelper.extra.DND_MODE: String` — `none | alarms | total` (default `total`; if DND not granted → **error**)
+- `fi.iki.pnr.kioskhelper.extra.RESULT_RECEIVER: android.os.ResultReceiver` — optional for immediate result
 
 ### Results (via callback/broadcast)
 - `OK`
@@ -112,7 +111,7 @@ Threat model (v0.1): accidental distractions are prevented; **malicious local us
 
 ## Limitations
 - Dedicated devices only (Device Owner). **Factory reset** is required to install.
-- **API 28+** only.
+- **API 33+** only.
 - Requires **DND** grant to enable kiosk.
 - Multi‑user/managed‑profile configurations are not supported in v1.
 
@@ -121,7 +120,7 @@ Threat model (v0.1): accidental distractions are prevented; **malicious local us
 ## Roadmap
 - **v0.1** — Design + caregiver setup guide (this repo)
 - **v0.2** — MVP helper APK: DO provisioning, HOME, Lock Task, DND fail‑fast, atomic broadcasts
-- **v0.3** — QA hardening across API 28–34; OEM sanity checks; tests
+- **v0.3** — QA hardening across API 33–34; OEM sanity checks; tests
 - **v1.0** — First public release
 - Later: optional notification listener backstop; allowlist UI
 

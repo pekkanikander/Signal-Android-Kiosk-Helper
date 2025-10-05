@@ -12,18 +12,18 @@ Exported components require the **signature permission** `fi.iki.pnr.kioskhelper
 - `fi.iki.pnr.kioskhelper.ACTION_DISABLE_KIOSK`
 
 ## Optional extras (caller → helper)
-- `extra_allowlist: ArrayList<String>` — packages allowed in Lock Task
+- `fi.iki.pnr.kioskhelper.extra.ALLOWLIST: ArrayList<String>` — packages allowed in Lock Task
   *Default:* `["fi.iki.pnr.kioskhelper", "org.thoughtcrime.securesms"]`
-- `extra_features: Int` — Lock Task features bitmask
+- `fi.iki.pnr.kioskhelper.extra.FEATURES: Int` — Lock Task features bitmask
   *Default:* omit NOTIFICATIONS; do not include HOME/RECENTS/GLOBAL_ACTIONS; include KEYGUARD
-- `extra_suppress_status_bar: Boolean` — whether to call `setStatusBarDisabled(true)` outside Lock Task
+- `fi.iki.pnr.kioskhelper.extra.SUPPRESS_STATUS_BAR: Boolean` — whether to call `setStatusBarDisabled(true)` outside Lock Task
   *Default:* `true`
-- `extra_dnd_mode: String` — one of `none | alarms | total`
+- `fi.iki.pnr.kioskhelper.extra.DND_MODE: String` — one of `none | alarms | total`
   *Default:* `total`; if DND access not granted → error (`ERR_DND_PERMISSION_MISSING`)
-- `extra_result_receiver: android.os.ResultReceiver` — optional immediate result callback (see **Results**)
+- `fi.iki.pnr.kioskhelper.extra.RESULT_RECEIVER: android.os.ResultReceiver` — optional immediate result callback (see **Results**)
 
 ## Results
-**Immediate result** (if `extra_result_receiver` is provided) and/or logcat. Values:
+**Immediate result** (if `fi.iki.pnr.kioskhelper.extra.RESULT_RECEIVER` is provided) and/or logcat. Values:
 - `OK`
 - `ERR_NOT_DEVICE_OWNER`
 - `ERR_DND_PERMISSION_MISSING` *(no policy applied)*
@@ -57,11 +57,11 @@ Exported components require the **signature permission** `fi.iki.pnr.kioskhelper
 ```kotlin
 val intent = Intent("fi.iki.pnr.kioskhelper.ACTION_ENABLE_KIOSK")
   .setClassName("fi.iki.pnr.kioskhelper", "fi.iki.pnr.kioskhelper.KioskCommandActivity")
-  .putStringArrayListExtra("extra_allowlist", arrayListOf(
+  .putStringArrayListExtra(Extras.ALLOWLIST, arrayListOf(
     "fi.iki.pnr.kioskhelper", "org.thoughtcrime.securesms"
   ))
-  .putExtra("extra_suppress_status_bar", true)
-  .putExtra("extra_dnd_mode", "total")
+  .putExtra(Extras.SUPPRESS_STATUS_BAR, true)
+  .putExtra(Extras.DND_MODE, "total")
 
 startActivity(intent)
 

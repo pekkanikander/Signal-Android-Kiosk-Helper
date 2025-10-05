@@ -23,8 +23,11 @@ We aim to keep the Signal baseline pristine and implement OS policy in a **separ
 ### 1.2 What kind of kiosk
 
 We want a **dedicated‑device kiosk** that:
-- Runs on **Android 9 / API 28+** only (earlier versions: fail fast with a clear error)
-  - Prior to API 28+ would require changes to Signal-Android. In 2025 (now), with this we support about 90% of devices.
+- Runs on **Android 13 / API 33+** only (earlier versions: fail fast with a clear error)
+  - Prior to API 28 would require changes to Signal-Android.
+  - Limiting to 33+ keeps the implementation small, aligning with Android 11+ package visibility rules,
+    more consistent **Lock Task / notification** behavior, and our deployment model (factory-reset, curated devices).
+    Supporting 28–32 would add branching and QA load with little benefit for our target users.
 - Uses **Device Owner (DO)** privileges (provisioned on a *freshly reset* device)
 - Exposes a tiny **Intent API** that Signal can call to **apply** and **clear** kiosk policy
 - Acts as the **HOME/Launcher** while kiosk is active to guarantee safe recovery and auto‑restart
@@ -52,8 +55,11 @@ We will use DND (“Total silence”) in addition to notification UI suppression
 
 ## 3) Constraints & Assumptions
 
-- **Android version:** API **28+** only; older versions return an error and do nothing.
+- **Android version:** API **33+** only; older versions return an error and do nothing.
+  - **Rationale:** Avoids legacy notification/DND edge cases and pre-Android-11 package-visibility differences;
+    matches current Lock Task behavior and minimizes OEM divergence.
 - **Ownership:** Device must be provisioned with our helper as **Device Owner (DO)** — requires **factory reset** (acceptable for our use case).
+- **Package visibility:** enforced per-user since Android 11. Signal and the helper must be installed in the same user (DO (v1) or PO (later))
 - **Network:** No internet connectivity required or used by the helper.
 - **Permissions:** Device admin (DO), optional DND access, boot completed. No root required.
 - **User model:** A caregiver/assisting user performs the setup once; the assisted user uses the kiosk daily.
@@ -81,14 +87,14 @@ When **APPLY kiosk**:
   - Configure **Lock Task Features** and **omit notifications** (i.e., do **not** include the notifications feature)
 - **Disable Status Bar** (outside of lock task) to block shade/quick settings when relevant
 - **DND: Total Silence** (if DND access granted) to suppress all sound/haptics
+  - Now targeting API 33+. On newer targets there may be a need to migrate to a rule-based DND
 - **User restrictions (initially mandatory, later optional via the intent):**
-  - Disallow system error dialogs (avoid crash/ANR popups)
   - Do allow safe boot and factory reset; requires knowledge that the assisted user is unlikely to have
   - Add other relevant restrictions if needed for the deployment
 - **Launcher role:** set helper as **persistent HOME** so Home always returns to a controlled surface
 - **Start Signal** in lock task and keep it in foreground; if Signal exits, HOME resumes and relaunches it
 
-### 5.1 Lock Task Feature defaults (API 28+)
+### 5.1 Lock Task Feature defaults (API 33+)
 
 | Feature constant (DevicePolicyManager)        | Default | Rationale |
 |---|---|---|
@@ -130,12 +136,13 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 - `fi.iki.pnr.kioskhelper.ACTION_DISABLE_KIOSK`
 
 ### Common extras (all optional unless stated)
-- `allowlist: String[]` — packages permitted in lock task (default: helper + Signal)
-- `features: Int` — Lock Task Features bitmask (with **notifications omitted** by default, other features to be studied)
-- `suppressStatusBar: Boolean` — default `true`
-- `dndMode: String` — `none | alarms | total` (default `total` if access granted)
-- `suppressErrorDialogs: Boolean` — default `true`
-- `resultReceiver` or `resultPendingIntent` — optional callback for status
+- `fi.iki.pnr.kioskhelper.extra.ALLOWLIST: String[]` — packages permitted in lock task (default: helper + Signal)
+- `fi.iki.pnr.kioskhelper.extra.FEATURES: Int` — Lock Task Features bitmask (with **notifications omitted** by default)
+- `fi.iki.pnr.kioskhelper.extra.SUPPRESS_STATUS_BAR: Boolean` — default `true`
+- `fi.iki.pnr.kioskhelper.extra.DND_MODE: String` — `none | alarms | total` (default `total` if access granted)
+- `fi.iki.pnr.kioskhelper.extra.RESULT_RECEIVER: android.os.ResultReceiver` — optional callback for status
+
+> **Legacy aliases accepted for v0.x:** `allowlist`, `features`, `suppressStatusBar`, `dndMode`, `resultReceiver`/`resultPendingIntent`. If both namespaced and legacy keys are present, the helper uses the namespaced values.
 
 ### Result codes (returned via callback or sticky local broadcast)
 - `OK`
@@ -154,6 +161,8 @@ All Intents are **explicit** (package + class) and gated by a **signature permis
 - Target device can be **factory reset**
 - Helper APK and Signal APK available (local sideload)
 - A computer with `adb` (optional but recommended)
+
+Note that Signal and helper must be installed for the same Android user (per-user package visibility on Android 11+).
 
 **One‑time steps per device:**
 1. **Factory reset** the device. During initial setup, keep the device offline if desired.
@@ -210,7 +219,7 @@ That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  
 
 ## 11) Testing Strategy
 - **Unit tests (helper):** state machine transitions; persistence/restore; parameter validation.
-- **Instrumented tests:** apply/clear flows on API 28, 29, 30, 33, 34; reboot recovery; DND permission granted/denied branches.
+- **Instrumented tests:** apply/clear flows on API 33, 34, 35; reboot recovery; DND permission granted/denied branches.
 - Boot with DND revoked → helper no‑ops (no partial apply); enabling from Signal returns `ERR_DND_PERMISSION_MISSING`.
 
 ---
@@ -218,7 +227,7 @@ That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  
 ## 12) Maintainability & Upstreaming Posture
 - Signal baseline remains minimal; the helper is **optional**. Without the helper, Accessibility Mode still works (no kiosk).
 - All OS‑level behavior is isolated in the helper; future changes to Android kiosk APIs affect only this small APK.
-- Clear version gating at **API 28+** simplifies support.
+- Clear version gating at **API 33+** simplifies support.
 
 ---
 
@@ -228,9 +237,38 @@ That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  
 - **Full MDM / remote provisioning:** out of scope (privacy, complexity).
 - **Root‑based solutions:** unnecessary and undesirable.
 
----
+## 14) Headless Device Owner – Affiliated aka DO + PO design (future, not implemented for v1.0)
 
-## 14) Open Questions & Risks
+Starting with Android 14 (API 34), many devices ship in **Headless System User** mode:
+user **0** runs system services in the background and an ordinary **foreground user** (e.g. user 10) handles all UI.
+Android 14 also introduced a **Headless Device Owner – Affiliated** mode.
+In this model, a DPC installed as **Device Owner (DO)** on the headless system user is automatically accompanied
+by the same DPC acting as a **Profile Owner (PO)** in each *affiliated* foreground user.
+This is the recommended way to combine device‑wide policy with per‑user/UI control on headless devices.
+
+Hence, our plan is that this helper APK will play **both roles**—DO in user 0 for global policy (status‑bar suppression,
+lock‑task allowlists, etc.) and **PO in the foreground user** for anything that must run in the UI user (launching Signal,
+entering Lock Task, reacting to intents).
+Both roles will use the **same APK** but run as **separate processes** in different users with separate app data.
+
+### Pros and cons vs Device Owner only
+
+For v1.0, we will implement the Device Owner only model.
+Compared to this DO-only mode, the DO + PO model has the following pros and cons.
+
+**Pros**
+- Works on headless devices without hacks; UI actions run in the **correct user** (no package‑visibility issues).
+- Still a **single helper APK**; the platform instantiates DO/PO roles as needed.
+- Clear separation: DO handles global policy, PO handles user‑visible flows.
+
+**Cons**
+- **Provisioning complexity** is higher (affiliation requirement; verify PO presence in foreground user).
+- Two processes (one per user) means separate preferences/state; keep state minimal and idempotent.
+- Requires coordination between the two processes
+
+See the dedicated write-up: **[Headless DO + PO design](./Signal-Android-Kiosk-Helper-Design-DO+PO.md)**.
+
+## 15) Open Questions & Risks
 - Exact **Lock Task Features** set per OS version (e.g., behavior differences on Android 14/15)
 - OEM deviations in status‑bar disabling and DND semantics
 - Accessibility of the **emergency exit gesture** (discoverable to caregiver, not to assisted user)
@@ -239,11 +277,9 @@ That is, the Kiosk mode is on only when in Accessibility Mode (if toggled on).  
 
 Mitigations: conservative defaults; explicit OS‑version gating; caregiver documentation; backstop Notification Listener.
 
----
-
-## 15) Caregiver Documentation (outline)
+## 16) Caregiver Documentation (outline)
 1. What this mode does
-2. Devices and Android versions supported (Android 9+ only)
+2. Devices and Android versions supported (Android 13+ only)
 3. **Factory reset is required** (why and how)
 4. Install helper and make it Device Owner (QR/ADB walkthrough)
 5. Grant DND access
@@ -254,7 +290,7 @@ Mitigations: conservative defaults; explicit OS‑version gating; caregiver docu
 
 ---
 
-## 16) Glossary
+## 17) Glossary
 - **Device Owner (DO):** Special admin app that manages a dedicated device. Required for full kiosk controls.
 - **Lock Task:** Android capability to keep apps in the foreground and restrict system UI.
 - **Lock Task Features:** Fine‑grained toggles controlling which system features remain available during Lock Task.
@@ -263,8 +299,9 @@ Mitigations: conservative defaults; explicit OS‑version gating; caregiver docu
 
 ---
 
-## 17) Change Log
-- v0.1 (this doc): initial design for headless helper DPC+Launcher (API 28+), Intent contract, provisioning plan, and caregiver guide outline.
+## 18) Change Log
+- v0.1: initial design for headless helper DPC+Launcher (was API 28+), Intent contract, provisioning plan, and caregiver guide outline.
+- v0.1 (this doc): bumps minimum API level to 33+, add notes about DO + PO or Headless Device Owner – Affiliated design
 
 ---
 
