@@ -27,6 +27,11 @@ HELPER_PKG="fi.iki.pnr.kioskhelper"
 ADMIN_RCVER="${HELPER_PKG}/.AdminReceiver"
 SIGNAL_PKG="org.thoughtcrime.securesms"
 
+# --- IME CLI options ---
+IME_APK="rkkr-keyboard.apk"
+IME_ID="rkr.simplekeyboard.inputmethod/.latin.LatinIME"
+DISABLE_GBOARD=true
+
 usage() {
   cat <<EOF
 Usage: $0 --signal-apk PATH [--helper-apk PATH]
@@ -34,14 +39,18 @@ Usage: $0 --signal-apk PATH [--helper-apk PATH]
 Options:
   --signal-apk PATH   Path to Signal APK to install (required)
   --helper-apk PATH   Path to Kiosk Helper APK (default: ${HELPER_APK_DEFAULT})
+  --ime-apk PATH      Path to a third-party IME APK to sideload (optional)
+  --ime-id NAME       IME id to enable & set (e.g. rkr.simplekeyboard.inputmethod/.latin.LatinIME)
   -h, --help          Show this help
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --signal-apk) SIGNAL_APK="$2"; shift 2 ;;
-    --helper-apk) HELPER_APK="$2"; shift 2 ;;
+    --signal-apk)     SIGNAL_APK="$2"; shift 2 ;;
+    --helper-apk)     HELPER_APK="$2"; shift 2 ;;
+    --ime-apk)        IME_APK="$2"; shift 2 ;;
+    --ime-id)         IME_ID="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1"; usage; exit 2 ;;
   esac
@@ -73,10 +82,31 @@ install_user0 "$SIGNAL_APK"
 echo "Enable on-screen keyboard (for emulator)"
 adb shell settings put secure show_ime_with_hard_keyboard 1
 
-# The following are only for the emulator and don't work. Return to this later.
-#adb shell ime enable com.android.inputmethod.latin/.LatinIME || true
-#adb shell ime set com.android.inputmethod.latin/.LatinIME
-#adb shell pm disable-user --user 0 com.google.android.inputmethod.latin || true
+# --- Optional: install + select a minimal IME ---
+if [[ -n "$IME_APK" ]]; then
+  echo "Installing IME for user 0: $IME_APK"
+  install_user0 "$IME_APK"
+  echo "Launching IME app once to register/prepare"
+  IME_PKG="${IME_ID%%/*}"
+  # Try to open the launcher activity; fall back to App Info if no launcher.
+  #   adb shell monkey -p "$IME_PKG" -c android.intent.category.LAUNCHER
+  adb shell am start --user 0 -n rkr.simplekeyboard.inputmethod/.latin.settings.SettingsActivity
+  echo "Press ENTER when you've completed any on-screen enable steps…"
+  read -r
+  echo "Configuring IME: $IME_ID"
+  echo "  ime enable $IME_ID"; adb shell ime enable "$IME_ID"
+  echo "  ime set $IME_ID"; adb shell ime set "$IME_ID"
+fi
+
+# Disable voice typing IMEs (best effort)
+adb shell ime list -s | grep -i voice | while read -r VID; do
+  echo "  ime disable $VID"; adb shell ime disable "$VID"
+done
+
+if $DISABLE_GBOARD; then
+  echo "Disabling Gboard (com.google.android.inputmethod.latin) for user 0…"
+  adb shell pm disable-user --user 0 com.google.android.inputmethod.latin || true
+fi
 
 # --- 4) Determine current user and grant DND (always) ---
 USER_ID=$(adb shell cmd activity get-current-user | tr -cd '0-9')

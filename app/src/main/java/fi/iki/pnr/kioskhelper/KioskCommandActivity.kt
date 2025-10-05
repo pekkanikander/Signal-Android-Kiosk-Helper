@@ -7,6 +7,8 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Build
+import android.os.Parcelable
 import android.os.ResultReceiver
 import android.util.Log
 
@@ -16,18 +18,8 @@ class KioskCommandActivity : Activity() {
         intent?.extras?.classLoader = ResultReceiver::class.java.classLoader
 
         val action = intent?.action
-        val resultReceiver: ResultReceiver? = try {
-            intent?.getParcelableExtra(Extras.RESULT_RECEIVER, ResultReceiver::class.java)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Ignoring ResultReceiver extra (unmarshal failed): ${t.message}")
-            null
-        }
-        val resultPi: PendingIntent? = try {
-            intent?.getParcelableExtra(Extras.RESULT_PENDING_INTENT, PendingIntent::class.java)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Ignoring PendingIntent extra (unmarshal failed): ${t.message}")
-            null
-        }
+        val resultReceiver: ResultReceiver? = intent?.getParcelableExtraCompat(Extras.RESULT_RECEIVER)
+        val resultPi: PendingIntent? = intent?.getParcelableExtraCompat(Extras.RESULT_PENDING_INTENT)
         Log.i(TAG, "KioskCommandActivity received action=$action")
 
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -121,5 +113,20 @@ class KioskCommandActivity : Activity() {
         private const val BROADCAST_APPLIED = "fi.iki.pnr.kioskhelper.KIOSK_APPLIED"
         private const val BROADCAST_CLEARED = "fi.iki.pnr.kioskhelper.KIOSK_CLEARED"
         private const val DEFAULT_FEATURES = 0 // helper prepares policy; Signal pins/unpins
+    }
+}
+
+// Localized version-gated extra retrieval to support API 31+ while compiling with 34+
+private inline fun <reified T : Parcelable> Intent.getParcelableExtraCompat(key: String): T? {
+    return try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableExtra(key, T::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            getParcelableExtra(key) as? T
+        }
+    } catch (t: Throwable) {
+        Log.w("KioskHelper", "Parcelable extra '$key' unmarshal failed: ${t.message}")
+        null
     }
 }
