@@ -21,15 +21,16 @@ REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../../" && pwd)
 
 HELPER_APK_DEFAULT="${REPO_ROOT}/app/build/outputs/apk/debug/app-debug.apk"
 HELPER_APK="${HELPER_APK_DEFAULT}"
-SIGNAL_APK=""
-
 HELPER_PKG="fi.iki.pnr.kioskhelper"
-ADMIN_RCVER="${HELPER_PKG}/.AdminReceiver"
+
+SIGNAL_APK="../Signal-Android-Accessibility-Kiosk/app/build/outputs/apk/playProd/debug/Signal-Android-play-prod-arm64-v8a-debug-7.56.4.apk"
 SIGNAL_PKG="org.thoughtcrime.securesms"
 
-# --- IME CLI options ---
-IME_APK="rkkr-keyboard.apk"
+ADMIN_RCVER="${HELPER_PKG}/.AdminReceiver"
+
+IME_APK="../simple-keyboard/app/build/outputs/apk/accessibility/debug/app-accessibility-debug.apk"
 IME_ID="rkr.simplekeyboard.inputmethod/.latin.LatinIME"
+
 DISABLE_GBOARD=true
 
 usage() {

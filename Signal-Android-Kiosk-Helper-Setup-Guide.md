@@ -1,19 +1,21 @@
 # Signal Android Kiosk Helper — Setup Guide (Caregiver)
 
-**Version:** 0.1
-**Supports:** Android 9 (API 28) and newer
+**Version:** 0.2
+**Supports:** Android 10 (API 29) and newer
 **Audience:** Caregivers / assisting users setting up a dedicated device for the assisted user
 
-> **What this does**
-> This guide walks you through preparing a *fresh* Android device to run Signal in a simplified, distraction‑free **Kiosk Mode** using the **Kiosk Helper** app. While kiosk is ON, the device will: (1) hide notification UI, (2) silence sound/vibration, and (3) keep Signal in the foreground. You can turn kiosk OFF at any time.
-
-> **Scope:** Kiosk is **active only while Signal’s Accessibility Mode is ON**. Outside Accessibility Mode, the device behaves normally.
-
----
+This guide walks you through preparing a *fresh* Android device to run Signal in a simplified,
+distraction‑free **Kiosk Mode** using the **Kiosk Helper** app.
+While kiosk is ON, the device will:
+  (1) hide notification UI,
+  (2) silence sound/vibration, and
+  (3) keep Signal in the foreground.
+You can turn kiosk OFF at any time.
 
 ## 0) Quick Checklist
+
 - A device you can **factory reset** (all data is erased)
-- Android **9+** (API 28+) — earlier versions are **not supported**
+- Android **10+** (API 29+) — earlier versions are **not supported**
 - The two APK files: **Kiosk Helper** and **Signal (Accessibility build)**
 - Optional but recommended: a laptop with **ADB** installed
 - A Wi‑Fi network you control (local network is fine; internet access is not required)

@@ -3,7 +3,6 @@ package fi.iki.pnr.kioskhelper
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import android.app.NotificationManager
@@ -11,7 +10,6 @@ import android.app.NotificationManager
 object KioskController {
     private const val TAG = "KioskHelper"
     private const val PREFS = "kiosk_prefs"
-    private const val KEY_PREV_HOME = "previous_home"
     private const val KEY_APPLIED = "kiosk_applied"
 
     private fun prefs(context: Context): SharedPreferences =
@@ -61,6 +59,9 @@ object KioskController {
         return true
     }
 
+    fun isPrepared(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_APPLIED, false)
+
     fun clearKiosk(context: Context, admin: ComponentName): Boolean {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
@@ -69,58 +70,9 @@ object KioskController {
             dpm.setStatusBarDisabled(admin, false)
         } catch (_: Throwable) {}
 
-        Log.i(TAG, "clearKiosk called")
-        val stored = prefs(context).getString(KEY_PREV_HOME, null)
-        if (stored != null) {
-            val component = ComponentName.unflattenFromString(stored)
-            if (component != null) {
-                Log.i(TAG, "Restoring previous HOME=$stored")
-                KioskHomeUtil.setPersistentHome(context, dpm, admin, component)
-            } else {
-                Log.w(TAG, "Stored previous HOME string invalid; clearing helper preferences for HOME")
-                dpm.clearPackagePersistentPreferredActivities(admin, context.packageName)
-            }
-        } else {
-            Log.i(TAG, "No previous HOME stored; leaving HOME as-is")
-        }
+        Log.i(TAG, "clearKiosk called (no HOME restore in v1)")
 
         prefs(context).edit().putBoolean(KEY_APPLIED, false).apply()
         return true
-    }
-}
-
-object KioskHomeUtil {
-    fun setPersistentHome(
-        context: Context,
-        dpm: DevicePolicyManager,
-        admin: ComponentName,
-        home: ComponentName
-    ) {
-        // Minimal persistent preferred for HOME/MAIN
-        // Using newer API simplified by clearing and letting DPM prefer our HOME.
-        dpm.addPersistentPreferredActivity(
-            admin,
-            android.content.IntentFilter(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                addCategory(Intent.CATEGORY_DEFAULT)
-            },
-            home
-        )
-    }
-
-    fun clearToChooser(context: Context, dpm: DevicePolicyManager, admin: ComponentName) {
-        // Clear helper persistent preferences so HOME chooser appears
-        dpm.clearPackagePersistentPreferredActivities(admin, context.packageName)
-    }
-
-    fun resolveDefaultHome(context: Context): ComponentName? {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            addCategory(Intent.CATEGORY_DEFAULT)
-        }
-        val resolveInfo = pm.resolveActivity(intent, 0) ?: return null
-        val activityInfo = resolveInfo.activityInfo ?: return null
-        return ComponentName(activityInfo.packageName, activityInfo.name)
     }
 }

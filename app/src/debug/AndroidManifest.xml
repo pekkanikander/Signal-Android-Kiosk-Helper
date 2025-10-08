@@ -2,11 +2,13 @@
 <manifest package="fi.iki.pnr.kioskhelper"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/> -->
+
     <application>
         <activity
             android:name=".KioskCommandActivity"
             android:exported="true"
-            android:permission="@null"
-            tools:replace="android:permission" />
+            tools:remove="android:permission" />
     </application>
 </manifest>
